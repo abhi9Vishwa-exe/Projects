@@ -1,0 +1,21 @@
+{% extends 'questions_list.html' %}
+
+{% block insert_title %}
+Home - Curiosity
+{% endblock %}
+
+{% block heading %}
+Top Questions
+{% endblock %}
+
+{%block empty_message%}
+No questions to display. Please select your favouriteTags
+{% endblock %}
+
+{% block script %}
+<script>
+  $(document).ready(function () {
+    $("#homeButton").closest('a').addClass("active");
+  })
+</script>
+{%endblock%}

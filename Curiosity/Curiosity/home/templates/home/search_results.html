@@ -1,0 +1,21 @@
+{% extends 'questions_list.html' %}
+
+{% block insert_title %}
+Search Result - Curiosity
+{% endblock %}
+
+{% block heading %}
+Search Results
+{% endblock %}
+
+{%block empty_message%}
+No questions to display.
+{% endblock %}
+
+{% block script %}
+<script>
+  $(document).ready(function () {
+    $("#questionButton").closest('a').addClass("active");
+  })
+</script>
+{%endblock%}

@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block insert_title %}
+Questions - Curiosity
+{% endblock %}
+
+{% block insert_content %}
+<h1 class="container">
+    {% block heading %}
+    Questions
+    {% endblock %}
+</h1>
+
+<br>
+
+<div class="container">
+
+    {% if questions %}
+    {%for question in questions%}
+    <div class="card d-flex flex-row "
+        style="box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(146, 146, 146, 0.6);">
+
+        <!-- question stats -->
+        <div class="d-flex flex-column align-middle ques-stats">
+            <span>{{question.viewedBy.count}} views</span>
+            <span>{{question.get_votes}} votes</span>
+            <span>{{question.answer_set.count}} answers</span>
+        </div>
+
+        <!-- question content -->
+        <div class="d-flex flex-column">
+            <!-- question title and summary -->
+            <a href="{% url 'questions:view_question' question_id=question.id %}" style="text-decoration: none;">
+                <h5 style="margin-bottom: 4px;">{{question.title}}</h5>
+            </a>
+            <div style="margin-bottom: 4px;">{{question.get_summary_text}}</div>
+
+            <!-- question menu buttons -->
+            <div class="d-flex flex-row">
+                <span>
+                    <!-- bookmark and follow buttons -->
+                    <form class="follow-bookmark-form icon-only-buttons" style="display:inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="question_id" value="{{question.id}}">
+
+                        <button type="submit" class="bookmark" name="action" , value="bookmark" data-toggle="tooltip" data-placement="bottom" title="Bookmark">
+                            {% if user in question.users_bookmarked.all %}
+                            <i class="fa-solid fa-bookmark"></i>
+                            {% else %}
+                            <i class="fa-regular fa-bookmark"></i>
+                            {% endif %}
+                        </button>
+
+                        <button type="submit" class="follow" name="action" , value="follow" data-toggle="tooltip" data-placement="bottom" title="Follow">
+                            {% if user in question.users_following.all %}
+                            <i class="fa-solid fa-star"></i>
+                            {% else %}
+                            <i class="fa-regular fa-star"></i>
+                            {% endif %}
+                        </button>
+                    </form>
+
+                    <!-- report button -->
+                    {% if not user.blocked %}
+                    <!-- Button trigger modal -->
+                    <button type="button" class="report-button" data-bs-toggle="modal" data-bs-target="#staticBackdrop"  data-toggle="tooltip" data-placement="bottom" title="Report">
+                        <i class="fa-solid fa-ban" style="color: red;"></i>
+                    </button>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false"
+                        tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="staticBackdropLabel">Report</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <form action="{% url 'questions:report' question.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <input type="hidden" name="obj_type" value="q">
+                                        <textarea class="form-control" name="report_text" aria-label="With textarea"
+                                            placeholder="Author used abusive language..." required></textarea>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                            data-bs-dismiss="modal">Close</button>
+                                        <button type="submit" name="id" value={{question.id}}
+                                            class="btn btn-danger">Report</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    &nbsp; &nbsp;
+
+                    <!-- tags associated with the question -->
+                    {% for tag in question.tags.all %}
+                    {% if tag in user.favouriteTags.all %}
+                    <a class="btn btn-success" style="padding: 0px 8px;" href="{% url 'home:tags' tagname=tag.name%}"
+                        class="tag_questions">{{tag.name}}</a>
+                    {% else %}
+                    <a class="btn btn-light" style="padding: 0px 8px; background-color: rgb(255, 227, 189);"
+                        href="{% url 'home:tags' tagname=tag.name%}" class="tag_questions">{{tag.name}}</a>
+                    {% endif %}
+                    {% endfor %}
+                </span>
+
+                <!-- question author and publishing date -->
+                <div class="text-right" style="position: absolute; right: 16px; color: rgb(94, 94, 94);">Asked by
+                    {% if question.get_author_name == 'Anonymous User' %}
+                    someone
+                    {% else %}
+                    <a style="text-decoration: none;" href="{% url 'users:view_user' question.author.id %}">
+                        <img src="{{question.author.profile_image.url}}" width="20" height="20"
+                            style="border-radius: 50%;">
+                        {{question.author.username}}</a>
+                    {% endif %}
+                    on {{question.pub_date}}
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    {%endfor%}
+    {% else %}
+    <h2>
+        {% block empty_message %}
+        No questions to display.
+        {% endblock %}
+    </h2>
+    {% endif %}
+</div>
+
+<script>
+    $(document).ready(function () {
+        // bookmark and follow buttons
+        $(".follow-bookmark-form").find(':button').click(function (e) {
+            var form = $(this).closest('form');
+            var dataString = form.serializeArray();
+            dataString.push({ name: 'action', value: $(this).val() });
+            $.ajax({
+                type: "POST",
+                url: "{% url 'questions:follow_bookmark' %}",
+                data: dataString,
+                success: function (data) {
+                    var result = JSON.parse(data);
+                    if (result['status'] == 'followed') {
+                        form.find('.follow i').removeClass("fa-regular").addClass("fa-solid");
+                    }
+                    else if (result['status'] == 'bookmarked') {
+                        form.find('.bookmark i').removeClass("fa-regular").addClass("fa-solid");
+                    }
+                    else if (result['status'] == 'unfollowed') {
+                        form.find('.follow i').removeClass("fa-solid").addClass("fa-regular");
+                    }
+                    else {
+                        form.find('.bookmark i').removeClass("fa-solid").addClass("fa-regular");
+                    }
+                },
+                error: function () {
+                    alert("error");
+                }
+            });
+            e.preventDefault();
+        });
+    });
+</script>
+{% block script %}
+
+{% endblock %}
+{% endblock %}
+
+{% block insert_right_bar %}
+<br> <br> <br>
+
+<!-- favourite and popular tags list -->
+<div class="fav-tags" style="box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(146, 146, 146, 0.6);">
+    <div class="tags-box">Favourite Tags
+        <a href="{% url 'users:addtags' %}" style="position: absolute; right: 28px; font-size: 15px;">Manage</a>
+    </div>
+    <div style="padding: 12px;">
+        {% for tag in user.favouriteTags.all %}
+        <a class="btn btn-success" style="padding: 0px 8px; margin: 3px 0px;"
+            href="{% url 'home:tags' tagname=tag.name%}" class="tag_questions">{{tag.name}}
+        </a>
+        {% endfor %}
+    </div>
+</div>
+<br>
+<div class="popular-tags" style="box-shadow: 0 1px 1px rgba(0, 0, 0, 0.075) inset, 0 0 8px rgba(146, 146, 146, 0.6);">
+    <div class="tags-box">Popular Tags</div>
+    <div style="padding: 12px;">
+        {% for tag in pop_tags %}
+        {% if tag in user.favouriteTags.all %}
+        <a class="btn btn-success" style="padding: 0px 8px; margin: 3px 0px;"
+            href="{% url 'home:tags' tagname=tag.name%}" class="tag_questions">{{tag.name}}
+        </a>
+        {% else %}
+        <a class="btn btn-light" style="padding: 0px 8px; background-color: rgb(255, 227, 189);"
+            href="{% url 'home:tags' tagname=tag.name%}" class="tag_questions">{{tag.name}}
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

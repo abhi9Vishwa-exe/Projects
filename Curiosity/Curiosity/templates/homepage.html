@@ -1,0 +1,58 @@
+{% extends 'base.html'%}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block insert_title %}
+{{ usr.name }} - Curiosity
+{% endblock %}
+
+{%block insert_content%}
+
+<div class="profile">
+    <div id="photo">
+        <div id="center-photo">
+            <img src="{{usr.profile_image.url}}" alt="Image not found" />
+        </div>
+    </div>
+    <div id="data">
+        <form class="data-input" action="" view="profile">
+            Username<br>
+            <x class="test">{{usr.username}}</x>
+        </form>
+        <p></p>
+        <form class="data-input" action="" view="profile">
+            Name<br>
+            <x class="test">{{usr.name}}</x>
+        </form>
+        <p></p>
+        <form class="data-input" action="" view="profile">
+            Email<br>
+            <x class="test">{{usr.email}}</x>
+        </form>
+        <p></p>
+        {% if usr == user %}
+        <form class="data-input" action="" view="profile">
+            <a href="{% url 'home:authorQuestions' %}">Questions Asked</a><br>
+        </form>
+        {%else%}
+        <form class="data-input" action="" view="profile">
+            <a href="{% url 'home:otherauthorQuestions' usr.id %}">Questions Asked</a><br>
+        </form>
+        {% endif %}
+    </div>
+</div>
+</div>
+{% if usr == request.user %}
+<script>
+    $(document).ready(function () {
+        $("#profileButton").closest('a').addClass("active");
+    })
+</script>
+{% else %}
+<script>
+    $(document).ready(function () {
+        $("#usersButton").closest('a').addClass("active");
+    })
+</script>
+{% endif %}
+{% endblock %}
